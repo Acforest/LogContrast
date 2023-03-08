@@ -105,14 +105,14 @@ def test(model, dataloader, criterion, device):
 if __name__ == '__main__':
     args, logger = load_configs()
 
-    if args.sem_model_name == 'bert':
+    if args.semantic_model_name == 'bert':
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    elif args.sem_model_name == 'roberta':
+    elif args.semantic_model_name == 'roberta':
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', add_prefix_space=True)
-    elif args.sem_model_name == 'albert':
+    elif args.semantic_model_name == 'albert':
         tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
     else:
-        raise ValueError('`sem_model_name` must be in ["bert", "roberta", "albert"]')
+        raise ValueError('`semantic_model_name` must be in ["bert", "roberta", "albert"]')
 
     train_dataloader, test_dataloader = load_data(log_type=args.log_type,
                                                   train_data_dir=args.train_data_dir,
@@ -137,39 +137,41 @@ if __name__ == '__main__':
     else:
         raise ValueError('`loss_fct` must be in ["ce", "cl"]')
 
-    save_dir = os.path.join(args.save_dir, args.model_name)
+    save_dir = os.path.join(args.model_dir, args.model_name)
 
     best_results = {'loss': np.Inf, 'precision': 0.0, 'recall': 0.0, 'f1': 0.0, 'acc': 0.0}
     best_metric_to_save = 'acc'
 
-    logger.info('Training:')
-    for epoch in tqdm(range(args.num_epoch), desc='Epoch'):
-        train_results = train(logcontrast, train_dataloader, criterion, optimizer, args.device)
-        logger.info(f'epoch: {epoch + 1}/{args.num_epoch} - {100 * (epoch + 1) / args.num_epoch:.2f}%')
-        logger.info(f'[train]\n'
-                    f'loss: {train_results["loss"]}\n'
-                    f'cross_entropy_loss: {train_results["cross_entropy_loss"] if train_results["cross_entropy_loss"] else None}\n'
-                    f'contrastive_loss: {train_results["contrastive_loss"] if train_results["contrastive_loss"] else None}\n'
-                    f'precision: {100 * train_results["precision"]}\n'
-                    f'recall: {100 * train_results["recall"]}\n'
-                    f'f1: {100 * train_results["f1"]}\n'
-                    f'acc: {100 * train_results["acc"]}')
-        if best_results[best_metric_to_save] < train_results[best_metric_to_save]:
-            best_results.update(train_results)
-            torch.save(logcontrast.state_dict(), save_dir)
-            logger.info(f'model saved at "{save_dir}"')
+    if args.do_train:
+        logger.info('Training:')
+        for epoch in tqdm(range(args.num_epoch), desc='Epoch'):
+            train_results = train(logcontrast, train_dataloader, criterion, optimizer, args.device)
+            logger.info(f'epoch: {epoch + 1}/{args.num_epoch} - {100 * (epoch + 1) / args.num_epoch:.2f}%')
+            logger.info(f'[train]\n'
+                        f'loss: {train_results["loss"]}\n'
+                        f'cross_entropy_loss: {train_results["cross_entropy_loss"] if train_results["cross_entropy_loss"] else None}\n'
+                        f'contrastive_loss: {train_results["contrastive_loss"] if train_results["contrastive_loss"] else None}\n'
+                        f'precision: {100 * train_results["precision"]}\n'
+                        f'recall: {100 * train_results["recall"]}\n'
+                        f'f1: {100 * train_results["f1"]}\n'
+                        f'acc: {100 * train_results["acc"]}')
+            if best_results[best_metric_to_save] < train_results[best_metric_to_save]:
+                best_results.update(train_results)
+                torch.save(logcontrast.state_dict(), save_dir)
+                logger.info(f'model saved at "{save_dir}"')
 
-    logcontrast.load_state_dict(torch.load(save_dir))
+    if args.do_test:
+        logcontrast.load_state_dict(torch.load(save_dir))
 
-    logger.info('Testing:')
-    test_results = test(logcontrast, test_dataloader, criterion, args.device)
-    logger.info(f'[test]\n'
-                f'loss: {test_results["loss"]}\n'
-                f'cross_entropy_loss: {test_results["cross_entropy_loss"] if test_results["cross_entropy_loss"] else None}\n'
-                f'contrastive_loss: {test_results["contrastive_loss"] if test_results["contrastive_loss"] else None}\n'
-                f'precision: {100 * test_results["precision"]}\n'
-                f'recall: {100 * test_results["recall"]}\n'
-                f'f1: {100 * test_results["f1"]}\n'
-                f'acc: {100 * test_results["acc"]}')
+        logger.info('Testing:')
+        test_results = test(logcontrast, test_dataloader, criterion, args.device)
+        logger.info(f'[test]\n'
+                    f'loss: {test_results["loss"]}\n'
+                    f'cross_entropy_loss: {test_results["cross_entropy_loss"] if test_results["cross_entropy_loss"] else None}\n'
+                    f'contrastive_loss: {test_results["contrastive_loss"] if test_results["contrastive_loss"] else None}\n'
+                    f'precision: {100 * test_results["precision"]}\n'
+                    f'recall: {100 * test_results["recall"]}\n'
+                    f'f1: {100 * test_results["f1"]}\n'
+                    f'acc: {100 * test_results["acc"]}')
 
     logger.info(f'log saved at: "{args.log_name}"')

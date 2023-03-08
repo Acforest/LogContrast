@@ -225,7 +225,7 @@ def main():
                                        random_seed=args.random_seed,
                                        train_num=args.train_num)
 
-    # log_preprocessor.parse_log()
+    log_preprocessor.parse_log()
     log_preprocessor.generate_structured_dataset()
 
 

@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 # misc
-dataset/
-output/
-logs/
+/dataset/
+/output/
+/logs/
