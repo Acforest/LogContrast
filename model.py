@@ -198,20 +198,20 @@ class LogKeyFeatureExtrator(nn.Module):
 
 class LogSemanticsFeatureExtrator(nn.Module):
     def __init__(self,
-                 sem_model_name: str,
+                 semantic_model_name: str,
                  feat_dim: int):
         super(LogSemanticsFeatureExtrator, self).__init__()
-        if sem_model_name == 'bert':
+        if semantic_model_name == 'bert':
             self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
             self.model = BertModel.from_pretrained('bert-base-uncased', return_dict=True)
-        elif sem_model_name == 'roberta':
+        elif semantic_model_name == 'roberta':
             self.tokenizer = RobertaTokenizer.from_pretrained('roberta-base', add_prefix_space=True)
             self.model = RobertaModel.from_pretrained('roberta-base', return_dict=True)
-        elif sem_model_name == 'albert':
+        elif semantic_model_name == 'albert':
             self.tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
             self.model = AlbertModel.from_pretrained('albert-base-v2', return_dict=True)
         else:
-            raise ValueError('`sem_model_name` must be in ["bert", "roberta", "albert"]')
+            raise ValueError('`semantic_model_name` must be in ["bert", "roberta", "albert"]')
         for param in self.model.parameters():
             param.requires_grad_(True)
 
@@ -229,9 +229,9 @@ class LogContrast(nn.Module):
                  vocab_size: int,
                  feat_dim: int,
                  feat_type: str,
-                 sem_model_name: str):
+                 semantic_model_name: str):
         super(LogContrast, self).__init__()
-        self.semantics_extrator = LogSemanticsFeatureExtrator(sem_model_name, feat_dim)
+        self.semantics_extrator = LogSemanticsFeatureExtrator(semantic_model_name, feat_dim)
         self.logkey_extrator = LogKeyFeatureExtrator(vocab_size, feat_dim)
         self.feat_type = feat_type
         if feat_type == 'both':

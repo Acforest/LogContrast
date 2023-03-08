@@ -1,18 +1,15 @@
 import os
-import sys
 import torch
-import logging
 import numpy as np
 from tqdm import tqdm
-from datetime import datetime
 from collections import defaultdict
 from transformers import AlbertTokenizer, BertTokenizer, RobertaTokenizer
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-
 from config import load_configs
 from dataset import load_data
 from loss import ContrastiveLoss, CELoss
 from model import LogContrast
+from utils import set_seed
 
 
 def train(model, dataloader, criterion, optimizer, device):
@@ -105,6 +102,12 @@ def test(model, dataloader, criterion, device):
 if __name__ == '__main__':
     args, logger = load_configs()
 
+    assert args.do_train or args.do_eval, '`do_train` and `do_test` should be at least true for one'
+
+    logger.info(f'Parameters: {args}')
+
+    set_seed(args.seed)
+
     if args.semantic_model_name == 'bert':
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     elif args.semantic_model_name == 'roberta':
@@ -124,7 +127,7 @@ if __name__ == '__main__':
     logcontrast = LogContrast(vocab_size=args.vocab_size,
                               feat_dim=args.feat_dim,
                               feat_type=args.feat_type,
-                              sem_model_name=args.sem_model_name)
+                              semantic_model_name=args.semantic_model_name)
     logcontrast.to(args.device)
 
     params = filter(lambda p: p.requires_grad, logcontrast.parameters())
@@ -133,28 +136,27 @@ if __name__ == '__main__':
     if args.loss_fct == 'ce':
         criterion = CELoss()
     elif args.loss_fct == 'cl':
-        criterion = ContrastiveLoss()
+        criterion = ContrastiveLoss(temperature=args.temperature, lambda_c=args.lambda_c)
     else:
         raise ValueError('`loss_fct` must be in ["ce", "cl"]')
 
     save_dir = os.path.join(args.model_dir, args.model_name)
 
-    best_results = {'loss': np.Inf, 'precision': 0.0, 'recall': 0.0, 'f1': 0.0, 'acc': 0.0}
-    best_metric_to_save = 'acc'
-
     if args.do_train:
-        logger.info('Training:')
+        best_results = {'loss': np.Inf, 'precision': 0.0, 'recall': 0.0, 'f1': 0.0, 'acc': 0.0}
+        best_metric_to_save = 'acc'
+        logger.info('Training start:')
         for epoch in tqdm(range(args.num_epoch), desc='Epoch'):
             train_results = train(logcontrast, train_dataloader, criterion, optimizer, args.device)
-            logger.info(f'epoch: {epoch + 1}/{args.num_epoch} - {100 * (epoch + 1) / args.num_epoch:.2f}%')
             logger.info(f'[train]\n'
+                        f'epoch: {epoch + 1}/{args.num_epoch} - {100 * (epoch + 1) / args.num_epoch:.2f}%\n',
                         f'loss: {train_results["loss"]}\n'
                         f'cross_entropy_loss: {train_results["cross_entropy_loss"] if train_results["cross_entropy_loss"] else None}\n'
                         f'contrastive_loss: {train_results["contrastive_loss"] if train_results["contrastive_loss"] else None}\n'
                         f'precision: {100 * train_results["precision"]}\n'
                         f'recall: {100 * train_results["recall"]}\n'
                         f'f1: {100 * train_results["f1"]}\n'
-                        f'acc: {100 * train_results["acc"]}')
+                        f'acc: {100 * train_results["acc"]}\n')
             if best_results[best_metric_to_save] < train_results[best_metric_to_save]:
                 best_results.update(train_results)
                 torch.save(logcontrast.state_dict(), save_dir)
@@ -162,8 +164,7 @@ if __name__ == '__main__':
 
     if args.do_test:
         logcontrast.load_state_dict(torch.load(save_dir))
-
-        logger.info('Testing:')
+        logger.info('Testing start:')
         test_results = test(logcontrast, test_dataloader, criterion, args.device)
         logger.info(f'[test]\n'
                     f'loss: {test_results["loss"]}\n'
@@ -172,6 +173,6 @@ if __name__ == '__main__':
                     f'precision: {100 * test_results["precision"]}\n'
                     f'recall: {100 * test_results["recall"]}\n'
                     f'f1: {100 * test_results["f1"]}\n'
-                    f'acc: {100 * test_results["acc"]}')
+                    f'acc: {100 * test_results["acc"]}\n')
 
     logger.info(f'log saved at: "{args.log_name}"')
