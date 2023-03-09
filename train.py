@@ -141,6 +141,8 @@ if __name__ == '__main__':
         raise ValueError('`loss_fct` must be in ["ce", "cl"]')
 
     save_dir = os.path.join(args.model_dir, args.model_name)
+    if not os.path.exists(args.model_dir):
+        os.mkdir(args.model_dir)
 
     if args.do_train:
         best_results = {'loss': np.Inf, 'precision': 0.0, 'recall': 0.0, 'f1': 0.0, 'acc': 0.0}

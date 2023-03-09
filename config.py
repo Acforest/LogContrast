@@ -44,10 +44,8 @@ def load_configs():
                         help='Weight decay for optimizer in training stage (default: 0.01)')
     parser.add_argument('--lambda_c', type=float, default=0.1,
                         help='Weight hyperparameter of contrastive loss (default: 0.1)')
-    parser.add_argument('--temperature', type=float, default=0.1,
-                        help='Temperature hyperparameter of contrastive loss (default: 0.1)')
-    parser.add_argument('--save_dir', type=str, default='./output/HDFS',
-                        help='The output directory where the model checkpoints will be written (default: "./output/HDFS"')
+    parser.add_argument('--temperature', type=float, default=0.5,
+                        help='Temperature hyperparameter of contrastive loss (default: 0.5)')
 
     ''' Testing '''
     parser.add_argument('--do_test', action='store_true', default=True,
@@ -67,7 +65,7 @@ def load_configs():
 
     args.device = torch.device(args.device)
 
-    if args.model_name == '':
+    if args.model_name == '' and args.do_train:
         args.model_name = f'{args.log_type}_{args.loss_fct}_epoch{args.num_epoch}.pt'
     args.log_name = f'{args.model_name[:-3]}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")[2:]}.log'
     if not os.path.exists('logs'):
