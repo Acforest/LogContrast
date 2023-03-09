@@ -18,7 +18,7 @@ def load_configs():
                         help='The directory where LogContrast model checkpoints will be loaded or saved (default: "./models/")')
     parser.add_argument('--model_name', type=str, default='',
                         help='The name of LogContrast model (default: "")')
-    parser.add_argument('--semantic_model_name', type=str, default='albert',
+    parser.add_argument('--semantic_model_name', type=str, default='albert', choices=['bert', 'roberta', 'albert'],
                         help='The name of LogContrast semantic model ["bert", "roberta", "albert"] (default: "albert")')
     parser.add_argument('--feat_type', type=str, default='both', choices=['semantics', 'logkey', 'both'],
                         help='Feature dimension of log semantics and logkey ["semantics", "logkey", "both"] (default: "both")')
@@ -66,7 +66,8 @@ def load_configs():
     args.device = torch.device(args.device)
 
     if args.model_name == '' and args.do_train:
-        args.model_name = f'{args.log_type}_{args.loss_fct}_epoch{args.num_epoch}.pt'
+        args.model_name = f'{args.log_type}_{args.loss_fct}_{args.feat_type}_{args.semantic_model_name}_epoch{args.num_epoch}.pt'
+
     args.log_name = f'{args.model_name[:-3]}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")[2:]}.log'
     if not os.path.exists('logs'):
         os.mkdir('logs')

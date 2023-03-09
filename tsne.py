@@ -28,7 +28,7 @@ if __name__ == '__main__':
                               semantic_model_name='albert')
     logcontrast.to(device)
 
-    logcontrast.load_state_dict(torch.load('output/HDFS/model_contrastive_epoch20.pt'))
+    logcontrast.load_state_dict(torch.load('models/HDFS_ce_logkey_albert_epoch20.pt'))
 
     all_features, all_labels = [], []
 

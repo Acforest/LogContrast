@@ -1,4 +1,4 @@
-python train.py \
+python run.py \
 --log_type "HDFS" \
 --model_dir "./models/" \
 --model_name "" \
