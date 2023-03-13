@@ -2,7 +2,7 @@ python run.py \
 --log_type "BGL" \
 --model_dir "./models/" \
 --model_name "" \
---semantic_model_name "albert" \
+--semantic_model_name "bert" \
 --feat_type "semantics" \
 --feat_dim 512 \
 --vocab_size 2000 \
