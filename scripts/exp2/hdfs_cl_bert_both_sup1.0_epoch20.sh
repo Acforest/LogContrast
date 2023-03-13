@@ -2,7 +2,7 @@ python run.py \
 --log_type "HDFS" \
 --model_dir "./models/" \
 --model_name "" \
---semantic_model_name "albert" \
+--semantic_model_name "bert" \
 --feat_type "both" \
 --feat_dim 512 \
 --vocab_size 120 \

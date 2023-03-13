@@ -2,15 +2,15 @@ python run.py \
 --log_type "BGL" \
 --model_dir "./models/" \
 --model_name "" \
---semantic_model_name "albert" \
+--semantic_model_name "bert" \
 --feat_type "both" \
 --feat_dim 512 \
 --vocab_size 2000 \
---sup_ratio 1.0 \
+--sup_ratio 0.8 \
 --do_train \
 --train_batch_size 64 \
 --train_data_dir "./datasets/BGL/BGL_train_10000.csv" \
---loss_fct "ce" \
+--loss_fct "cl" \
 --num_epoch 20 \
 --lr 0.00001 \
 --weight_decay 0.01 \

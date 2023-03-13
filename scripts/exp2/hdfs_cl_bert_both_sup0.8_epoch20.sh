@@ -2,11 +2,11 @@ python run.py \
 --log_type "HDFS" \
 --model_dir "./models/" \
 --model_name "" \
---semantic_model_name "albert" \
+--semantic_model_name "bert" \
 --feat_type "both" \
 --feat_dim 512 \
 --vocab_size 120 \
---sup_ratio 0.2 \
+--sup_ratio 0.8 \
 --do_train \
 --train_batch_size 64 \
 --train_data_dir "./datasets/HDFS/HDFS_train_10000.csv" \

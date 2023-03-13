@@ -1,15 +1,15 @@
 python run.py \
---log_type "BGL" \
+--log_type "HDFS" \
 --model_dir "./models/" \
 --model_name "" \
---semantic_model_name "albert" \
+--semantic_model_name "bert" \
 --feat_type "both" \
 --feat_dim 512 \
---vocab_size 2000 \
---sup_ratio 0.3 \
+--vocab_size 120 \
+--sup_ratio 1.0 \
 --do_train \
 --train_batch_size 64 \
---train_data_dir "./datasets/BGL/BGL_train_10000.csv" \
+--train_data_dir "./datasets/HDFS/HDFS_train_10000.csv" \
 --loss_fct "cl" \
 --num_epoch 20 \
 --lr 0.00001 \
@@ -18,6 +18,6 @@ python run.py \
 --temperature 0.5 \
 --do_test \
 --test_batch_size 64 \
---test_data_dir "./datasets/BGL/BGL_test_942699.csv" \
+--test_data_dir "./datasets/HDFS/HDFS_test_575061.csv" \
 --seed 1234 \
 --device "cuda"
