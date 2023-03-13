@@ -81,24 +81,6 @@ class LogPreProcessor:
                 self.parser = Drain.LogParser(indir=self.input_dir, outdir=self.output_dir,
                                               log_format=log_format, depth=depth, st=st,
                                               rex=regex, keep_para=False)
-        elif self.log_type == 'Spark':
-            log_format = '<Date> <Time> <Level> <Component>: <Content>'
-            regex = [
-                r'(\d+\.){3}\d+',
-                r'\b[KGTM]?B\b',
-                r'([\w-]+\.){2,}[\w-]+'
-            ]
-            if parser_type == 'Spell':
-                tau = 0.55
-                self.parser = Spell.LogParser(indir=self.input_dir, outdir=self.output_dir,
-                                              log_format=log_format, tau=tau, rex=regex,
-                                              keep_para=False)
-            elif parser_type == 'Drain':
-                st = 0.5
-                depth = 4
-                self.parser = Drain.LogParser(indir=self.input_dir, outdir=self.output_dir,
-                                              log_format=log_format, depth=depth, st=st,
-                                              rex=regex, keep_para=False)
         else:
             raise ValueError('log_type is not in ["HDFS", "BGL", "Thunderbird"]')
 
@@ -108,11 +90,6 @@ class LogPreProcessor:
     def generate_structured_dataset(self) -> None:
         log_structured_file = os.path.join(self.output_dir, f'{self.log_file}_structured.csv')
         data_df = pd.read_csv(log_structured_file, engine='c', na_filter=False, memory_map=True)
-
-        # def remove_sepectial_tokens(r: str):
-        #     r = re.findall('[\u4e00-\u9fa5a-zA-Z\\d]+', r, re.S)
-        #     r = ' '.join(r)
-        #     return r
 
         if self.log_type == 'HDFS':
             # session windows
@@ -137,13 +114,6 @@ class LogPreProcessor:
             event_template_seq_df = pd.DataFrame(list(event_template_seq_dict.items()),
                                                  columns=['BlockId', 'EventTemplateSequence'])
             data_df = pd.concat([event_id_seq_df, event_template_seq_df['EventTemplateSequence']], axis=1)
-
-            # def get_semantic(r):
-            #     row_str = remove_sepectial_tokens(' '.join(r))
-            #     row_list = row_str.split()
-            #     row_list_sorted = list(set(row_list))
-            #     row_list_sorted.sort(key=row_list.index)
-            #     return ' '.join(row_list_sorted)
 
             data_df['EventTemplateSequence'] = data_df['EventTemplateSequence']
             data_df['Label'] = data_df['BlockId'].apply(lambda r: label_dict[r])
@@ -190,7 +160,6 @@ class LogPreProcessor:
             data_df = pd.DataFrame(row_list)
         elif self.log_type == 'Thunderbird':
             pass
-
         else:
             raise ValueError('`log_type` must be in ["HDFS", "BGL", "Thunderbird"]')
 
@@ -202,16 +171,20 @@ class LogPreProcessor:
 def main():
     parser = argparse.ArgumentParser(description='Command line interface for log parser')
 
-    parser.add_argument('--input_dir', type=str, required=True, help='The diretory of input log')
-    parser.add_argument('--output_dir', type=str, required=True, default='output/HDFS',
+    parser.add_argument('--input_dir', type=str, required=True,
+                        help='The diretory of input log')
+    parser.add_argument('--output_dir', type=str, required=True,
                         help='The diretory of output file')
-    parser.add_argument('--log_type', type=str, required=True, choices=['HDFS', 'BGL', 'Thunderbird', 'Spark'],
+    parser.add_argument('--log_type', type=str, required=True, choices=['HDFS', 'BGL', 'Thunderbird'],
                         help='The type of input log file')
-    parser.add_argument('--log_file', type=str, required=True, help='The name of input log file')
+    parser.add_argument('--log_file', type=str, required=True,
+                        help='The name of input log file')
     parser.add_argument('--parser_type', type=str, default='Drain', choices=['Spell', 'Drain'],
                         help='The type of log parser')
-    parser.add_argument('--random_seed', type=int, default=1234, help='Random seed')
-    parser.add_argument('--train_num', type=int, default=10000, help='Number of data for training')
+    parser.add_argument('--random_seed', type=int, default=1234,
+                        help='Random seed')
+    parser.add_argument('--train_num', type=int, default=10000,
+                        help='Number of data for training')
 
     args = parser.parse_args()
 

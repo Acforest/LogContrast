@@ -75,8 +75,8 @@ def load_data(log_type: str,
     train_dataset = LogDataset(train_raw_data)
     test_dataset = LogDataset(test_raw_data)
     log_collate_fn = partial(collate_fn, tokenizer=tokenizer)
-    train_dataloader = DataLoader(train_dataset, train_batch_size, pin_memory=True, collate_fn=log_collate_fn)
-    test_dataloader = DataLoader(test_dataset, test_batch_size, pin_memory=True, collate_fn=log_collate_fn)
+    train_dataloader = DataLoader(train_dataset, train_batch_size, collate_fn=log_collate_fn)
+    test_dataloader = DataLoader(test_dataset, test_batch_size, collate_fn=log_collate_fn)
     return train_dataloader, test_dataloader
 
 

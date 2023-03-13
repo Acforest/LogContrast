@@ -9,26 +9,32 @@ from matplotlib import pyplot as plt
 from dataset import load_data
 from model import LogContrast
 
-
 if __name__ == '__main__':
     tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    train_dataloader, test_dataloader = load_data(log_type='HDFS',
-                                                  train_data_dir='./output/HDFS/HDFS_train_10000.csv',
-                                                  test_data_dir='./output/HDFS/HDFS_test_575061.csv',
+    # train_dataloader, test_dataloader = load_data(log_type='HDFS',
+    #                                               train_data_dir='./output/HDFS/HDFS_train_10000.csv',
+    #                                               test_data_dir='./output/HDFS/HDFS_test_575061.csv',
+    #                                               tokenizer=tokenizer,
+    #                                               train_batch_size=50,
+    #                                               test_batch_size=50)
+
+    train_dataloader, test_dataloader = load_data(log_type='BGL',
+                                                  train_data_dir='./output/BGL/BGL_train_10000.csv',
+                                                  test_data_dir='./output/BGL/BGL_test_942699.csv',
                                                   tokenizer=tokenizer,
                                                   train_batch_size=50,
                                                   test_batch_size=50)
 
-    logcontrast = LogContrast(vocab_size=120,
+    logcontrast = LogContrast(vocab_size=2000,  # 120 for HDFS and 2000 for BGL
                               feat_dim=512,
                               feat_type='logkey',
                               semantic_model_name='albert')
     logcontrast.to(device)
 
-    logcontrast.load_state_dict(torch.load('models/HDFS_ce_logkey_albert_epoch20.pt'))
+    logcontrast.load_state_dict(torch.load('models/BGL_cl_logkey_albert_epoch20_sup0.2.pt'))
 
     all_features, all_labels = [], []
 
@@ -66,4 +72,3 @@ if __name__ == '__main__':
     sns.scatterplot(x='f1', y='f2', hue=df['label'].tolist(),
                     palette=sns.color_palette('hls', num_classes), data=df).set(title='t-SNE')
     plt.show()
-

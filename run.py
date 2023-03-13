@@ -3,16 +3,16 @@ import torch
 import numpy as np
 from tqdm import tqdm
 from collections import defaultdict
-from transformers import AlbertTokenizer, BertTokenizer, RobertaTokenizer
+from transformers import BertTokenizer, RobertaTokenizer, AlbertTokenizer
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from config import load_configs
 from dataset import load_data
-from loss import ContrastiveLoss, CELoss
+from loss import CELoss, CLLoss
 from model import LogContrast
 from utils import set_seed
 
 
-def train(model, dataloader, criterion, optimizer, device):
+def train(model, dataloader, criterion, optimizer, device, sup_ratio=1.0):
     losses = defaultdict(list)
     all_predicts, all_labels = [], []
     model.train()
@@ -29,15 +29,25 @@ def train(model, dataloader, criterion, optimizer, device):
         logits, feature = model(semantics, sequences, seqence_masks)
         predicts = torch.argmax(logits, dim=1)
 
-        all_losses = criterion(logits, labels, feature)
+        if isinstance(criterion, CELoss):
+            all_losses = criterion(logits, labels)
+        elif isinstance(criterion, CLLoss):
+            # unsupervised learning
+            if np.random.rand() < sup_ratio:
+                all_losses = criterion(logits, labels, feature, True)
+            else:
+                all_losses = criterion(logits, labels, feature, False)
+        else:
+            raise ValueError('`criterion` must be ["ce_loss", "cl_loss"]')
+
         loss = all_losses['loss']
         losses['loss'].append(loss.item())
 
-        if 'cross_entropy_loss' in all_losses.keys():
-            losses['cross_entropy_loss'].append(all_losses['cross_entropy_loss'].item())
+        if 'ce_loss' in all_losses.keys():
+            losses['ce_loss'].append(all_losses['ce_loss'].item())
 
-        if 'contrastive_loss' in all_losses.keys():
-            losses['contrastive_loss'].append(all_losses['contrastive_loss'].item())
+        if 'cl_loss' in all_losses.keys():
+            losses['cl_loss'].append(all_losses['cl_loss'].item())
 
         optimizer.zero_grad()
         loss.backward()
@@ -48,8 +58,8 @@ def train(model, dataloader, criterion, optimizer, device):
 
     return {
         'loss': np.mean(losses['loss']),
-        'cross_entropy_loss': np.mean(losses['cross_entropy_loss']) if 'cross_entropy_loss' in losses.keys() else None,
-        'contrastive_loss': np.mean(losses['contrastive_loss']) if 'contrastive_loss' in losses.keys() else None,
+        'ce_loss': np.mean(losses['ce_loss']) if 'ce_loss' in losses.keys() else None,
+        'cl_loss': np.mean(losses['cl_loss']) if 'cl_loss' in losses.keys() else None,
         'precision': precision_score(all_labels, all_predicts),
         'recall': recall_score(all_labels, all_predicts),
         'f1': f1_score(all_labels, all_predicts),
@@ -79,19 +89,19 @@ def test(model, dataloader, criterion, device):
             loss = all_losses['loss']
             losses['loss'].append(loss.item())
 
-            if 'cross_entropy_loss' in all_losses.keys():
-                losses['cross_entropy_loss'].append(all_losses['cross_entropy_loss'].item())
+            if 'ce_loss' in all_losses.keys():
+                losses['ce_loss'].append(all_losses['ce_loss'].item())
 
-            if 'contrastive_loss' in all_losses.keys():
-                losses['contrastive_loss'].append(all_losses['contrastive_loss'].item())
+            if 'cl_loss' in all_losses.keys():
+                losses['cl_loss'].append(all_losses['cl_loss'].item())
 
             all_predicts += predicts.detach().cpu().numpy().tolist()
             all_labels += labels.detach().cpu().numpy().tolist()
 
     return {
         'loss': np.mean(losses['loss']),
-        'cross_entropy_loss': np.mean(losses['cross_entropy_loss']) if 'cross_entropy_loss' in losses.keys() else None,
-        'contrastive_loss': np.mean(losses['contrastive_loss']) if 'contrastive_loss' in losses.keys() else None,
+        'ce_loss': np.mean(losses['ce_loss']) if 'ce_loss' in losses.keys() else None,
+        'cl_loss': np.mean(losses['cl_loss']) if 'cl_loss' in losses.keys() else None,
         'precision': precision_score(all_labels, all_predicts),
         'recall': recall_score(all_labels, all_predicts),
         'f1': f1_score(all_labels, all_predicts),
@@ -136,7 +146,7 @@ if __name__ == '__main__':
     if args.loss_fct == 'ce':
         criterion = CELoss()
     elif args.loss_fct == 'cl':
-        criterion = ContrastiveLoss(temperature=args.temperature, lambda_c=args.lambda_c)
+        criterion = CLLoss(temperature=args.temperature, lambda_cl=args.lambda_cl)
     else:
         raise ValueError('`loss_fct` must be in ["ce", "cl"]')
 
@@ -149,12 +159,12 @@ if __name__ == '__main__':
         best_metric_to_save = 'acc'
         logger.info('Training start:')
         for epoch in tqdm(range(args.num_epoch), desc='Epoch'):
-            train_results = train(logcontrast, train_dataloader, criterion, optimizer, args.device)
+            train_results = train(logcontrast, train_dataloader, criterion, optimizer, args.device, args.sup_ratio)
             logger.info('[train]')
             logger.info(f'epoch: {epoch + 1}/{args.num_epoch} - {100 * (epoch + 1) / args.num_epoch:.2f}%')
             logger.info(f'loss: {train_results["loss"]}')
-            logger.info(f'cross_entropy_loss: {train_results["cross_entropy_loss"] if train_results["cross_entropy_loss"] else None}')
-            logger.info(f'contrastive_loss: {train_results["contrastive_loss"] if train_results["contrastive_loss"] else None}')
+            logger.info(f'ce_loss: {train_results["ce_loss"] if train_results["ce_loss"] else None}')
+            logger.info(f'cl_loss: {train_results["cl_loss"] if train_results["cl_loss"] else None}')
             logger.info(f'precision: {100 * train_results["precision"]}')
             logger.info(f'recall: {100 * train_results["recall"]}')
             logger.info(f'f1: {100 * train_results["f1"]}')
@@ -170,8 +180,8 @@ if __name__ == '__main__':
         test_results = test(logcontrast, test_dataloader, criterion, args.device)
         logger.info('[test]')
         logger.info(f'loss: {test_results["loss"]}')
-        logger.info(f'cross_entropy_loss: {test_results["cross_entropy_loss"] if test_results["cross_entropy_loss"] else None}')
-        logger.info(f'contrastive_loss: {test_results["contrastive_loss"] if test_results["contrastive_loss"] else None}')
+        logger.info(f'ce_loss: {test_results["ce_loss"] if test_results["ce_loss"] else None}')
+        logger.info(f'cl_loss: {test_results["cl_loss"] if test_results["cl_loss"] else None}')
         logger.info(f'precision: {100 * test_results["precision"]}')
         logger.info(f'recall: {100 * test_results["recall"]}')
         logger.info(f'f1: {100 * test_results["f1"]}')

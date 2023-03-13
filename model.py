@@ -180,11 +180,11 @@ class TSTransformerEncoder(nn.Module):
         return output
 
 
-class LogKeyFeatureExtrator(nn.Module):
+class LogKeyFeatureExtractor(nn.Module):
     def __init__(self,
                  vocab_size: int,
                  feat_dim: int):
-        super(LogKeyFeatureExtrator, self).__init__()
+        super(LogKeyFeatureExtractor, self).__init__()
         self.model = TSTransformerEncoder(vocab_size=vocab_size)
         self.linear = nn.Linear(self.model.feat_dim, feat_dim)
 
@@ -196,11 +196,11 @@ class LogKeyFeatureExtrator(nn.Module):
         return feature
 
 
-class LogSemanticsFeatureExtrator(nn.Module):
+class LogSemanticsFeatureExtractor(nn.Module):
     def __init__(self,
                  semantic_model_name: str,
                  feat_dim: int):
-        super(LogSemanticsFeatureExtrator, self).__init__()
+        super(LogSemanticsFeatureExtractor, self).__init__()
         if semantic_model_name == 'bert':
             self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
             self.model = BertModel.from_pretrained('bert-base-uncased', return_dict=True)
@@ -231,8 +231,8 @@ class LogContrast(nn.Module):
                  feat_type: str,
                  semantic_model_name: str):
         super(LogContrast, self).__init__()
-        self.semantics_extrator = LogSemanticsFeatureExtrator(semantic_model_name, feat_dim)
-        self.logkey_extrator = LogKeyFeatureExtrator(vocab_size, feat_dim)
+        self.semantics_extractor = LogSemanticsFeatureExtractor(semantic_model_name, feat_dim)
+        self.logkey_extractor = LogKeyFeatureExtractor(vocab_size, feat_dim)
         self.feat_type = feat_type
         if feat_type == 'both':
             self.linear = nn.Linear(feat_dim * 2, 2)
@@ -243,12 +243,12 @@ class LogContrast(nn.Module):
 
     def forward(self, semantics, logkeys, logkey_padding_masks):
         if self.feat_type == 'semantics':
-            feats = self.semantics_extrator(semantics)
+            feats = self.semantics_extractor(semantics)
         elif self.feat_type == 'logkey':
-            feats = self.logkey_extrator(logkeys, logkey_padding_masks)
+            feats = self.logkey_extractor(logkeys, logkey_padding_masks)
         elif self.feat_type == 'both':
-            semantics_feat = self.semantics_extrator(semantics)
-            logkey_feat = self.logkey_extrator(logkeys, logkey_padding_masks)
+            semantics_feat = self.semantics_extractor(semantics)
+            logkey_feat = self.logkey_extractor(logkeys, logkey_padding_masks)
             feats = torch.cat([semantics_feat, logkey_feat], dim=1)
         else:
             raise ValueError('`feat_type` must be in ["semantics", "logkey", "both"]')

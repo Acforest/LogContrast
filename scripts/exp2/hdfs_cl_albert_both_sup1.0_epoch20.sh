@@ -1,0 +1,23 @@
+python run.py \
+--log_type "HDFS" \
+--model_dir "./models/" \
+--model_name "" \
+--semantic_model_name "albert" \
+--feat_type "both" \
+--feat_dim 512 \
+--vocab_size 120 \
+--sup_ratio 1.0 \
+--do_train \
+--train_batch_size 64 \
+--train_data_dir "./datasets/HDFS/HDFS_train_10000.csv" \
+--loss_fct "cl" \
+--num_epoch 20 \
+--lr 0.00001 \
+--weight_decay 0.01 \
+--lambda_cl 0.1 \
+--temperature 0.5 \
+--do_test \
+--test_batch_size 64 \
+--test_data_dir "./datasets/HDFS/HDFS_test_575061.csv" \
+--seed 1234 \
+--device "cuda"
