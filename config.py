@@ -62,6 +62,8 @@ def load_configs():
                         help='Random seed for reproducibility (default: 1234)')
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu',
                         help='The device for training or testing (default: "cuda" if available else "cpu")')
+    parser.add_argument('--log_dir', type=str, default='cuda' if torch.cuda.is_available() else 'cpu',
+                        help='The directory for output logs (default: "./logs/")')
 
     args = parser.parse_args()
 
@@ -71,11 +73,11 @@ def load_configs():
         args.model_name = f'{args.log_type}_{args.loss_fct}_{args.semantic_model_name}_{args.feat_type}_sup{args.sup_ratio}_epoch{args.num_epoch}.pt'
 
     args.log_name = f'{args.model_name[:-3]}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")[2:]}.log'
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
+    if not os.path.exists(args.log_dir):
+        os.makedirs(args.log_dir)
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.addHandler(logging.FileHandler(os.path.join('logs', args.log_name)))
+    logger.addHandler(logging.FileHandler(os.path.join(args.log_dir, args.log_name)))
 
     return args, logger

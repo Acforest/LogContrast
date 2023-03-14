@@ -8,7 +8,7 @@ python run.py \
 --vocab_size 120 \
 --sup_ratio 0.2 \
 --do_train \
---train_batch_size 64 \
+--train_batch_size 16 \
 --train_data_dir "./datasets/HDFS/HDFS_train_10000.csv" \
 --loss_fct "cl" \
 --num_epoch 20 \
@@ -17,7 +17,8 @@ python run.py \
 --lambda_cl 0.1 \
 --temperature 0.5 \
 --do_test \
---test_batch_size 64 \
+--test_batch_size 16 \
 --test_data_dir "./datasets/HDFS/HDFS_test_575061.csv" \
 --seed 1234 \
---device "cuda"
+--device "cuda" \
+--log_dir "./logs/exp1/"

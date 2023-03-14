@@ -141,6 +141,9 @@ if __name__ == '__main__':
     logcontrast.to(args.device)
 
     params = filter(lambda p: p.requires_grad, logcontrast.parameters())
+    num_params = sum([p.nelement() for p in params])
+    logger.info(f'Number of trainable parameters: {num_params}')
+
     optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.weight_decay)
 
     if args.loss_fct == 'ce':

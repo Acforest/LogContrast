@@ -212,8 +212,14 @@ class LogSemanticsFeatureExtractor(nn.Module):
             self.model = AlbertModel.from_pretrained('albert-base-v2', return_dict=True)
         else:
             raise ValueError('`semantic_model_name` must be in ["bert", "roberta", "albert"]')
-        for param in self.model.parameters():
-            param.requires_grad_(True)
+
+        unfreezed_layers = ['out.']
+        for name, param in self.model.named_parameters():
+            param.requires_grad_(False)
+            for ele in unfreezed_layers:
+                if ele in name:
+                    param.requires_grad_(True)
+                    break
 
         self.linear = nn.Linear(self.model.config.hidden_size, feat_dim)
 

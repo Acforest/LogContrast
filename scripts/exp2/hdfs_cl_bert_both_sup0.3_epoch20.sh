@@ -20,4 +20,5 @@ python run.py \
 --test_batch_size 64 \
 --test_data_dir "./datasets/HDFS/HDFS_test_575061.csv" \
 --seed 1234 \
---device "cuda"
+--device "cuda" \
+--log_dir "./logs/exp2/"

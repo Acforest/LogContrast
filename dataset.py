@@ -1,8 +1,6 @@
-from functools import partial
-from typing import List
-
-import pandas as pd
 import torch
+import pandas as pd
+from functools import partial
 from torch.utils.data import Dataset, DataLoader
 from transformers import BertTokenizer
 
@@ -36,6 +34,7 @@ class LogDataset(Dataset):
 
 def collate_fn(batch, tokenizer):
     log_semantics, log_sequences, log_sequence_masks, labels = map(list, zip(*batch))
+
     log_semantics = tokenizer(log_semantics,
                               padding=True,
                               truncation=True,
@@ -46,11 +45,12 @@ def collate_fn(batch, tokenizer):
     log_sequences = torch.tensor(log_sequences, dtype=torch.long)
     log_sequence_masks = torch.tensor(log_sequence_masks, dtype=torch.bool)
     labels = torch.tensor(labels, dtype=torch.long)
+
     return {
         'semantics': log_semantics,
         'sequences': log_sequences,
         'sequence_masks': log_sequence_masks,
-        'labels': labels
+        'labels': labels,
     }
 
 
